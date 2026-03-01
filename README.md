@@ -1,0 +1,1 @@
+This is simple Messaging App using React and Appwrite as backend.
