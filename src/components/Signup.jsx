@@ -14,10 +14,35 @@ function Signup() {
         if (response) {
             const currUser = await authService.getCurrentUser();
             console.log(currUser);
-            dispatch(login({userData: currUser}));
+            dispatch(login({ userData: currUser }));
         }
     }
     return (
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+                <legend className="fieldset-legend text-2xl">Signup</legend>
+
+                <label className="label" htmlFor="username">Username</label>
+                <input type="text" className="input" placeholder="Username" id="username" {...register('username', { required: "username is required" })} />
+                {formState.errors.username && <p className="text-red-500 text-sm">{formState.errors.username.message}</p>}
+
+                <label className="label" htmlFor="email">Email</label>
+                <input type="email" className="input" placeholder="Email" id="email" {...register('email', { required: "email is required" })} />
+                {formState.errors.username && <p className="text-red-500 text-sm">{formState.errors.username.message}</p>}
+
+                <label className="label" htmlFor="password">Password</label>
+                <input type="password" className="input" placeholder="Password" id="password" {...register('password', { required: "Password is required" })} />
+                {formState.errors.password && <p className="text-red-500 text-sm">{formState.errors.password.message}</p>}
+
+                <button type="submit" className="btn btn-neutral mt-4">Login</button>
+            </fieldset>
+        </form>
+    )
+}
+export default Signup;
+
+/*
+
         <div className="p-8 border rounded-lg shadow-md">
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 rounded-lg p-2 justify-around items-center">
                 <h2 className="w-full text-center text-xl">Signup</h2>
@@ -42,6 +67,4 @@ function Signup() {
                 <div>Already have account: <NavLink to="/login">Login Here</NavLink></div>
             </form>
         </div>
-    )
-}
-export default Signup;
+*/

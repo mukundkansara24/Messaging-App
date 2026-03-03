@@ -9,32 +9,28 @@ function Login() {
     const { register, handleSubmit, formState } = useForm();
     async function onSubmit(data) {
         const response = await authService.Login(data);
-        if(response) {
+        if (response) {
             const currUser = await authService.getCurrentUser();
             console.log(currUser);
-            dispatch(login({userData: currUser}));
+            dispatch(login({ userData: currUser }));
         }
     }
     return (
-        <div className="p-8 border rounded-lg shadow-md">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 rounded-lg p-2 justify-around items-center">
-                <h2 className="w-full text-center text-xl">Login</h2>
-                <div className="flex flex-col gap-2">
-                    <div>
-                        <label className="mr-8" htmlFor="email">Email</label>
-                        <input className="m-3 p-1 border-2 rounded-md" id="email" {...register('email', { required: "email is required" })} />
-                        {formState.errors.email && <p className="text-red-500 text-sm">{formState.errors.username.message}</p>}
-                    </div>
-                    <div>
-                        <label className="mr-1" htmlFor="password">Password</label>
-                        <input type="password" className="m-3 p-1 border-2 rounded-md" id="password" {...register('password', { required: "Password is required" })} />
-                        {formState.errors.password && <p className="text-red-500 text-sm">{formState.errors.password.message}</p>}
-                    </div>
-                </div>
-                <button className="border w-1/3 rounded-lg">Submit</button>
-                <div>New to App: <NavLink to="/signup">Sign Up Here</NavLink></div>
-            </form>
-        </div>
+        <form onSubmit={handleSubmit(onSubmit)}>
+        <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+            <legend className="fieldset-legend text-2xl">Login</legend>
+
+            <label className="label" htmlFor="email">Email</label>
+            <input type="email" className="input" placeholder="Email" id="email" {...register('email', { required: "email is required" })}/>
+            {formState.errors.email && <p className="text-red-500 text-sm">{formState.errors.email.message}</p>}
+
+            <label className="label" htmlFor="password">Password</label>
+            <input type="password" className="input" placeholder="Password" id="password" {...register('password', { required: "Password is required" })}/>
+            {formState.errors.password && <p className="text-red-500 text-sm">{formState.errors.password.message}</p>}
+
+            <button type="submit" className="btn btn-neutral mt-4">Login</button>
+        </fieldset>
+        </form>
     )
 }
 export default Login;
