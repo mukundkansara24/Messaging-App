@@ -1,0 +1,35 @@
+# Dependency directories
+node_modules/
+dist/
+build/
+out/
+
+# Version control
+.git/
+.svn/
+.hg/
+
+# Binary & Image files (Prettier can't/shouldn't format these)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.pdf
+*.zip
+*.exe
+
+# Lock files (Should be handled by their respective package managers)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs and environment files
+*.log
+.env
+.env.*
+
+# Formatting these can sometimes cause issues in specific environments
+.htaccess
+CNAME
