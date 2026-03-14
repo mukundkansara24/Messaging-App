@@ -87,9 +87,11 @@ function MessageList() {
                 <div
                   key={mess["$id"]}
                   id={mess["$id"]}
-                  className={`border w-2/3 m-1 p-1 rounded-lg ${mess["SenderID"] == userId ? "ml-[32%]" : ""} `}
+                  className={`chat ${mess["SenderID"] == userId ? "chat-start" : "chat-end"} `}
                 >
+                  <div className="chat-bubble">
                   {mess["Content"]}
+                  </div>
                 </div>
               );
             })}
