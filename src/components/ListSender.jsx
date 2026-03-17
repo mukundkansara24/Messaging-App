@@ -54,7 +54,7 @@ function ListSender() {
     // <> </> does not have layout property so i use div
     <>
       <div className="w-full h-full p-2">
-        <label className="input mb-2 pr-0">
+        <label className="input w-full mb-2 pr-0">
 
           <input type="search" placeholder="Search User"
             value={newUser}
@@ -83,7 +83,7 @@ function ListSender() {
         </label>
         <ul className="list rounded-box">
           {sender?.map((send) => (
-            <li className="list-row hover:bg-base-100 m-1" key={send.rows[0]?.$id}
+            <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={send.rows[0]?.$id}
               onClick={(e) => listMessage(send.rows[0]?.$id)}
             >
               <div>{send.rows[0]?.Username}</div>
