@@ -6,7 +6,7 @@ function Message() {
     <div className="flex w-full h-full">
       <div className="card m-1 bg-base-300 w-1/3 rounded-box grid place-items-center"><ListSender /></div>
       <div className="divider divider-horizontal m-0"></div>
-      <div className="card m-1 w-2/3 bg-base-300 rounded-box grid place-items-center">content</div>
+      <div className="card m-1 w-2/3 bg-base-300 rounded-box grid place-items-center"><MessageList /></div>
     </div>
   );
 }

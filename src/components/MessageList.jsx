@@ -69,6 +69,24 @@ function MessageList() {
       setText(""); // Clear the input box
     }
   }
+  if (userName == '') {
+    return <>Start our App by sending Message</>;
+  }
+  else {
+    return (
+      <div className="h-full w-full">
+        <div className="navbar bg-base-100 shadow-sm border-b-2 rounded-md justify-center font-bold">
+            {userName}
+        </div>
+      </div>
+    )
+  }
+}
+
+export default MessageList;
+
+
+/*
   if (userName == "") {
     return <>Start our App by sending message</>;
   } else {
@@ -119,6 +137,4 @@ function MessageList() {
       </div>
     );
   }
-}
-
-export default MessageList;
+*/
