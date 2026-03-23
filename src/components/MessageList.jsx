@@ -74,9 +74,41 @@ function MessageList() {
   }
   else {
     return (
-      <div className="h-full w-full">
-        <div className="navbar bg-base-100 shadow-sm border-b-2 rounded-md justify-center font-bold">
-            {userName}
+      <div className="w-full h-full flex flex-col border-4 border-base-200 mb-2 rounded-md">
+        <div className="navbar bg-base-300 shadow-sm border-b-2 rounded-md justify-center font-bold">
+          {userName}
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-1 flex flex-col bg-base-100 gap-2 overflow-y-auto p-2"
+        >
+          {message.length > 0 &&
+            message.map((mess) => {
+              return (
+                <div
+                  key={mess["$id"]}
+                  id={mess["$id"]}
+                  className={`chat ${mess["SenderID"] == userId ? "chat-end" : "chat-start"} `}
+                >
+                  <div className="chat-bubble">
+                    {mess["Content"]}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        <div className="w-full flex justify-between gap-2 p-1">
+          <input type="text" placeholder="Type..." className="w-full input"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+            }}
+          />
+          <button className="btn"
+            onClick={(e) => {
+              sendMessage();
+            }}
+          >Send</button>
         </div>
       </div>
     )

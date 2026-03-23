@@ -3,10 +3,10 @@ import ListSender from "./ListSender";
 import MessageList from "./MessageList";
 function Message() {
   return (
-    <div className="flex w-full h-full">
-      <div className="card m-1 bg-base-300 w-1/3 rounded-box grid place-items-center"><ListSender /></div>
+    <div className="flex w-full h-[90vh] p-2">
+      <div className="card m-1 bg-base-300 w-1/3 rounded-box overflow-hidden"><ListSender /></div>
       <div className="divider divider-horizontal m-0"></div>
-      <div className="card m-1 w-2/3 bg-base-300 rounded-box grid place-items-center"><MessageList /></div>
+      <div className="card m-1 w-2/3 bg-base-300 rounded-box overflow-hidden"><MessageList /></div>
     </div>
   );
 }
