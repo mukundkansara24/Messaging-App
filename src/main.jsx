@@ -19,7 +19,7 @@ const router = createBrowserRouter([
       {
         path: "/",
         element: (
-          <AuthLayout authentication={false}>
+          <AuthLayout>
             <Intro />
           </AuthLayout>
         ),
@@ -27,7 +27,7 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: (
-          <AuthLayout authentication={false}>
+          <AuthLayout>
             <Login />
           </AuthLayout>
         ),
@@ -35,7 +35,7 @@ const router = createBrowserRouter([
       {
         path: "/signup",
         element: (
-          <AuthLayout authentication={false}>
+          <AuthLayout>
             <Signup />
           </AuthLayout>
         ),
@@ -43,7 +43,7 @@ const router = createBrowserRouter([
       {
         path: "/message",
         element: (
-          <AuthLayout authentication={true}>
+          <AuthLayout>
             <Message />
           </AuthLayout>
         ),

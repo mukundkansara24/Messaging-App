@@ -1,26 +1,65 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import authService from "../appwrite/AppwriteService";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
+import api from "../utils/api";
 function Signup() {
   const { register, handleSubmit, formState } = useForm();
+  const [error, setError] = useState("");
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   async function onSubmit(data) {
     console.log(data);
-    const response = await authService.createUser(data);
-    if (response) {
-      const currUser = await authService.getCurrentUser();
-      console.log(currUser);
-      dispatch(login({ userData: currUser }));
+    try {
+      const response = await api.post('/user/signup', data);
+      // console.log(response);
+      if(response) {
+        alert("User successfully created, You will be redirect to login");
+        navigate('/login');
+      }
+    }
+    catch (error) {
+      console.log("Message = ", error.response);
+      setError(error.response?.data.message);
     }
   }
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
         <legend className="fieldset-legend text-2xl">Signup</legend>
+
+        <label className="label" htmlFor="first_name">
+          First Name
+        </label>
+        <input
+          type="text"
+          className="input"
+          placeholder="first_name"
+          id="first_name"
+          {...register("first_name", { required: "First Name is required" })}
+        />
+        {formState.errors.first_name && (
+          <p className="text-red-500 text-sm">
+            {formState.errors.first_name.message}
+          </p>
+        )}
+
+        <label className="label" htmlFor="last_name">
+          Last Name
+        </label>
+        <input
+          type="text"
+          className="input"
+          placeholder="last_name"
+          id="last_name"
+          {...register("last_name", { required: "Last Name is required" })}
+        />
+        {formState.errors.last_name && (
+          <p className="text-red-500 text-sm">
+            {formState.errors.last_name.message}
+          </p>
+        )}
 
         <label className="label" htmlFor="username">
           Username
@@ -84,6 +123,9 @@ function Signup() {
             "Signup"
           )}
         </button>
+        {error !== "" && <p className="text-red-500 text-sm">
+          {error}
+        </p>}
       </fieldset>
     </form>
   );

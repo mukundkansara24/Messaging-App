@@ -1,18 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from 'axios';
 import { useForm } from "react-hook-form";
 import authService from "../appwrite/AppwriteService";
-import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
+import api from "../utils/api";
+import { useNavigate } from "react-router";
+
+
 function Login() {
   const dispatch = useDispatch();
   const { register, handleSubmit, formState } = useForm();
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
   async function onSubmit(data) {
-    const response = await authService.Login(data);
-    if (response) {
-      const currUser = await authService.getCurrentUser();
-      console.log(currUser);
-      dispatch(login({ userData: currUser }));
+    try {
+      const response = await api.post('/user/login', data);
+      console.log(response.data);
+      dispatch(login({userData: response.data[0]}));
+      setError("");
+    } catch (error) {
+      console.log("Message = ", error.response);
+      setError(error.response?.data.message);
     }
   }
   return (
@@ -75,6 +85,9 @@ function Login() {
             "Login"
           )}
         </button>
+        {error !== "" && <p className="text-red-500 text-sm">
+          {error}
+        </p>}
       </fieldset>
     </form>
   );

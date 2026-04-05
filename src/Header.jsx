@@ -3,12 +3,20 @@ import { NavLink, useNavigate } from "react-router-dom";
 import authService from "./appwrite/AppwriteService";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "./store/authSlice";
+import api from "./utils/api";
 function Header() {
   const dispatch = useDispatch();
   const authStatus = useSelector((state) => state.status);
   async function logOut() {
-    await authService.Logout();
-    dispatch(logout());
+    try {
+      const response = await api.post('/user/logout');
+      if (response) {
+        dispatch(logout());
+      }
+    }
+    catch (error) {
+      console.log("error = ", error.response);
+    }
   }
   return (
     <>

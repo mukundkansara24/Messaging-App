@@ -2,6 +2,7 @@
   "name": "messaging-app",
   "private": true,
   "version": "0.0.0",
+  "proxy": "http://locahost:8000",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +15,7 @@
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.1",
     "appwrite": "^22.4.1",
+    "axios": "^1.14.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",

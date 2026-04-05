@@ -4,14 +4,21 @@ import { useEffect } from "react";
 import authService from "./appwrite/AppwriteService";
 import { useDispatch } from "react-redux";
 import { login } from "./store/authSlice";
+import api from "./utils/api";
 
 function App() {
   const dispatch = useDispatch();
   useEffect(() => {
     async function getUsers() {
-      const response = await authService.getCurrentUser();
-      if (response) {
-        dispatch(login({ userData: response }));
+      try {
+        const response = await api.get('/user/getUser');
+        if (response) {
+          console.log(response.data);
+          dispatch(login({ userData: response.data }));
+        }
+      }
+      catch (error) {
+        console.log(error.response);
       }
     }
     getUsers();
