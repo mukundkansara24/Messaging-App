@@ -1,52 +1,31 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import authService from "../appwrite/AppwriteService";
+import api from "../utils/api";
 function MessageList() {
-  const [userName, setUserName] = useState("");
-  const senderId = useSelector((state) => state.senderId);
+  const userName = useSelector((state) => state.groupUsername);
+  const groupId = useSelector((state) => state.groupId);
   const [message, setMessage] = useState([]);
   const [text, setText] = useState("");
   const userData = useSelector((state) => state.userData);
-  let userId = "";
-  if (userData != null) userId = userData["$id"];
-  // console.log("userid = ", userId);
-  useEffect(() => {
-    async function getUserName(senderId) {
-      if (senderId != "" && userId != "") {
-        const response = await authService.getUsername({ userId: senderId });
+
+  async function getMessage() {
+    try {
+      if (groupId !== "") {
+        const response = await api.get('/getMessage', { params: { group_id: groupId } });
+        // console.log(response);
         if (response) {
-          setUserName(response.rows[0].Username);
-          const mess = await authService.listMessage({
-            userId: userId,
-            senderId: senderId,
-          });
-          setMessage(mess.rows);
+          setMessage(response.data);
         }
       }
     }
-    getUserName(senderId);
-    let unsubscribe;
-    function autoUpdate() {
-      //Real time updates
-      unsubscribe = authService.subscribeToMessages(userId, (payload) => {
-        console.log("userID = ", userId);
-        console.log("senderId = ", senderId);
-        console.log("payload = ", payload);
-        if (
-          payload.SenderID === userId ||
-          (payload.ReceiverID === userId && payload.SenderID == senderId)
-        ) {
-          setMessage((prev) => {
-            return [...prev, payload];
-          });
-        }
-      });
+    catch (error) {
+      console.log(error.response);
     }
-    autoUpdate();
-    return () => {
-      unsubscribe();
-    };
-  }, [senderId, userId]);
+  }
+  useEffect(() => {
+    getMessage();
+  }, [groupId])
 
   // Scroll to bottom feature for message
   const scrollRef = useRef(null);
@@ -86,12 +65,11 @@ function MessageList() {
             message.map((mess) => {
               return (
                 <div
-                  key={mess["$id"]}
-                  id={mess["$id"]}
-                  className={`chat ${mess["SenderID"] == userId ? "chat-end" : "chat-start"} `}
+                  key={mess._id}
+                  className={`chat ${mess.sender_id == userData.id ? "chat-end" : "chat-start"} `}
                 >
                   <div className="chat-bubble">
-                    {mess["Content"]}
+                    {mess.message_text}
                   </div>
                 </div>
               );

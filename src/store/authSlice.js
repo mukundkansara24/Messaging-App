@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   status: false,
   userData: null,
-  senderId: "",
+  groupId: "",
+  groupUsername: "",
 };
 const authSlice = createSlice({
   name: "auth",
@@ -16,10 +17,12 @@ const authSlice = createSlice({
     logout: (state) => {
       state.status = false;
       state.userData = null;
-      state.senderId = "";
+      state.groupId = "";
+      state.groupUsername = "";
     },
     setReceiver: (state, action) => {
-      state.senderId = action.payload.senderId;
+      state.groupId = action.payload.groupId;
+      state.groupUsername = action.payload.groupUsername;
     },
   },
 });

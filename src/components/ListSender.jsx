@@ -2,20 +2,29 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import authService from "../appwrite/AppwriteService";
 import { setReceiver } from "../store/authSlice";
-import SearchLogo from "../assets/search.svg";
+import api from "../utils/api";
+
 function ListSender() {
-  const userData = useSelector((state) => state.userData);
   const [sender, setSender] = useState([]);
   const [newUser, SetNewUser] = useState("");
   const dispatch = useDispatch();
   async function listAllSender() {
-    let response = null;
-    if (userData) {
-      response = await authService.listSender({ userId: userData.$id });
+    try {
+      const response = await api.get('/listGroup');
+      console.log("response = ", response);
       if (response) {
-        return response;
+        const updatedData = await Promise.all(response.data.map(async (user) => {
+          if (user.name === null) {
+            const userName = await api.get('/findUsernameInPrivateGroup', {params: {group_id: user.id}});
+            return {...user, name: userName.data[0].username};
+          }
+          return user;
+        }))
+        setSender(updatedData);
       }
-      return null;
+    }
+    catch (error) {
+      console.log("Message = ", error.response);
     }
   }
   async function searchUser() {
@@ -29,26 +38,10 @@ function ListSender() {
     }
   }
   useEffect(() => {
-    async function listSender() {
-      const response = await listAllSender();
-      if (response == null) {
-        return;
-      }
-      // console.log(response);
-      const asyncPromise = response.map(async (user) => {
-        let username = await authService.getUsernameFromUserId({
-          userId: user,
-        });
-        return username;
-      });
-      const userName = await Promise.all(asyncPromise);
-      console.log(userName);
-      setSender(userName);
-    }
-    listSender();
-  }, [userData]);
-  function listMessage(senderId) {
-    dispatch(setReceiver({ senderId }));
+    listAllSender();
+  }, []);
+  function listMessage({groupId, groupUsername}) {
+    dispatch(setReceiver({ groupId, groupUsername }));
   }
   return (
     // <> </> does not have layout property so i use div
@@ -83,10 +76,10 @@ function ListSender() {
         </label>
         <ul className="list rounded-box">
           {sender?.map((send) => (
-            <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={send.rows[0]?.$id}
-              onClick={(e) => listMessage(send.rows[0]?.$id)}
+            <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={send.id}
+              onClick={(e) => listMessage({groupId: send.id, groupUsername: send.name})}
             >
-              <div>{send.rows[0]?.Username}</div>
+              <div>{send.name}</div>
             </li>
           ))}
 
