@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import authService from "../appwrite/AppwriteService";
 import api from "../utils/api";
+import socket from "../utils/socket";
 function MessageList() {
   const userName = useSelector((state) => state.groupUsername);
   const groupId = useSelector((state) => state.groupId);
@@ -27,6 +28,21 @@ function MessageList() {
     getMessage();
   }, [groupId])
 
+  useEffect(() => {
+    const handleMessage = (data) => {
+      // console.log("groupId = ", groupId);
+      // console.log(typeof data.group_id);
+      // if (data.group_id === groupId) {
+        setMessage((prevMessages) => [...prevMessages, data]);
+      // }
+    };
+    socket.on('chat message', handleMessage);
+
+    return () => {
+      socket.off('chat message', handleMessage);
+    };
+  }, [socket]);
+
   // Scroll to bottom feature for message
   const scrollRef = useRef(null);
   useEffect(() => {
@@ -39,13 +55,15 @@ function MessageList() {
     if (text == "") {
       return;
     }
-    const response = await authService.sendMessage({
-      senderId: userId,
-      receiverId: senderId,
-      message: text,
-    });
-    if (response) {
-      setText(""); // Clear the input box
+    try {
+      console.log("mesage sent");
+      const response = api.post('sendMessage', { group_id: Number(groupId), message_text: text });
+      if (response) {
+        setText("");
+      }
+    }
+    catch (error) {
+      console.log(error.response);
     }
   }
   if (userName == '') {

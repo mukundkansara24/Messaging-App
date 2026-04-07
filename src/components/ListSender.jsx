@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import authService from "../appwrite/AppwriteService";
 import { setReceiver } from "../store/authSlice";
 import api from "../utils/api";
+import socket from "../utils/socket";
 
 function ListSender() {
   const [sender, setSender] = useState([]);
@@ -15,8 +16,8 @@ function ListSender() {
       if (response) {
         const updatedData = await Promise.all(response.data.map(async (user) => {
           if (user.name === null) {
-            const userName = await api.get('/findUsernameInPrivateGroup', {params: {group_id: user.id}});
-            return {...user, name: userName.data[0].username};
+            const userName = await api.get('/findUsernameInPrivateGroup', { params: { group_id: user.id } });
+            return { ...user, name: userName.data[0].username };
           }
           return user;
         }))
@@ -37,11 +38,27 @@ function ListSender() {
       dispatch(setReceiver({ senderId: response.rows[0]["$id"] }));
     }
   }
+
   useEffect(() => {
     listAllSender();
   }, []);
-  function listMessage({groupId, groupUsername}) {
-    dispatch(setReceiver({ groupId, groupUsername }));
+
+  useEffect(() => {
+    if (sender.length > 0) {
+
+      if(!socket.connected) {
+        socket.connect();
+      }
+      sender.map((group) => {
+        console.log('Joining room: ', group.id)
+        socket.emit('join room', group.id);
+      })
+
+    }
+  }, [sender])
+  function listMessage({ groupId, groupUsername }) {
+    console.log("Dispatching:", typeof groupId, groupUsername);
+    dispatch(setReceiver({ groupId: String(groupId), groupUsername: groupUsername }));
   }
   return (
     // <> </> does not have layout property so i use div
@@ -77,7 +94,7 @@ function ListSender() {
         <ul className="list rounded-box">
           {sender?.map((send) => (
             <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={send.id}
-              onClick={(e) => listMessage({groupId: send.id, groupUsername: send.name})}
+              onClick={(e) => listMessage({ groupId: send.id, groupUsername: send.name })}
             >
               <div>{send.name}</div>
             </li>
