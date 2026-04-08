@@ -3,45 +3,9 @@ import { useSelector } from "react-redux";
 import authService from "../appwrite/AppwriteService";
 import api from "../utils/api";
 import socket from "../utils/socket";
-function MessageList() {
-  const userName = useSelector((state) => state.groupUsername);
-  const groupId = useSelector((state) => state.groupId);
-  const [message, setMessage] = useState([]);
+function MessageList({userName, message, groupId}) {
   const [text, setText] = useState("");
-  const userData = useSelector((state) => state.userData);
-
-  async function getMessage() {
-    try {
-      if (groupId !== "") {
-        const response = await api.get('/getMessage', { params: { group_id: groupId } });
-        // console.log(response);
-        if (response) {
-          setMessage(response.data);
-        }
-      }
-    }
-    catch (error) {
-      console.log(error.response);
-    }
-  }
-  useEffect(() => {
-    getMessage();
-  }, [groupId])
-
-  useEffect(() => {
-    const handleMessage = (data) => {
-      // console.log("groupId = ", groupId);
-      // console.log(typeof data.group_id);
-      // if (data.group_id === groupId) {
-        setMessage((prevMessages) => [...prevMessages, data]);
-      // }
-    };
-    socket.on('chat message', handleMessage);
-
-    return () => {
-      socket.off('chat message', handleMessage);
-    };
-  }, [socket]);
+  let userData = useSelector((state) => state.userData);
 
   // Scroll to bottom feature for message
   const scrollRef = useRef(null);
@@ -66,7 +30,7 @@ function MessageList() {
       console.log(error.response);
     }
   }
-  if (userName == '') {
+  if (message.length === 0) {
     return <>Start our App by sending Message</>;
   }
   else {
@@ -79,7 +43,7 @@ function MessageList() {
           ref={scrollRef}
           className="flex-1 flex flex-col bg-base-100 gap-2 overflow-y-auto p-2"
         >
-          {message.length > 0 &&
+          {message.length > 0 && userData &&
             message.map((mess) => {
               return (
                 <div
