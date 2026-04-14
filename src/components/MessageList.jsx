@@ -19,7 +19,7 @@ function MessageList({userName, message, groupId}) {
     if (text == "") {
       return;
     }
-    try {
+    try { 
       console.log("mesage sent");
       const response = api.post('sendMessage', { group_id: Number(groupId), message_text: text });
       if (response) {
@@ -30,7 +30,7 @@ function MessageList({userName, message, groupId}) {
       console.log(error.response);
     }
   }
-  if (message.length === 0) {
+  if (groupId === 0) {
     return <>Start our App by sending Message</>;
   }
   else {

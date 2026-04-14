@@ -16,6 +16,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "appwrite": "^22.4.1",
     "axios": "^1.14.0",
+    "nanoid": "^5.1.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",
