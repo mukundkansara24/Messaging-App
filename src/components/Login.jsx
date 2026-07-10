@@ -16,9 +16,15 @@ function Login() {
 
   async function onSubmit(data) {
     try {
-      const response = await api.post('/user/login', data);
+      const response = await api.post('/user/login', data,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          }
+        }
+      );
       console.log(response.data);
-      dispatch(login({userData: response.data[0]}));
+      dispatch(login({ userData: response.data[0] }));
       setError("");
     } catch (error) {
       console.log("Message = ", error.response);
