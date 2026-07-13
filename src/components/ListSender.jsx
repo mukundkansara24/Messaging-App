@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import authService from "../appwrite/AppwriteService";
 import { setReceiver } from "../store/authSlice";
 import api from "../utils/api";
 import socket from "../utils/socket";

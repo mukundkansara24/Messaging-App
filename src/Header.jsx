@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import authService from "./appwrite/AppwriteService";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "./store/authSlice";
 import api from "./utils/api";

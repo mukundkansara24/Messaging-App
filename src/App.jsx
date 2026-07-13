@@ -1,7 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { useEffect } from "react";
-import authService from "./appwrite/AppwriteService";
 import { useDispatch } from "react-redux";
 import { login } from "./store/authSlice";
 import api from "./utils/api";

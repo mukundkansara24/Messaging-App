@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import authService from "../appwrite/AppwriteService";
 import api from "../utils/api";
 import socket from "../utils/socket";
 function MessageList({userName, message, groupId}) {

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import axios from 'axios';
 import { useForm } from "react-hook-form";
-import authService from "../appwrite/AppwriteService";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
 import api from "../utils/api";
@@ -15,14 +14,9 @@ function Login() {
   const navigate = useNavigate();
 
   async function onSubmit(data) {
+    console.log("data = ", data);
     try {
-      const response = await api.post('/user/login', data,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          }
-        }
-      );
+      const response = await api.post('/user/login', data);
       console.log(response.data);
       dispatch(login({ userData: response.data[0] }));
       setError("");
