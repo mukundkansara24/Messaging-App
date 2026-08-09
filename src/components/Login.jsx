@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { login } from "../store/authSlice";
 import api from "../utils/api";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 
 function Login() {

@@ -4,41 +4,16 @@ import api from "../utils/api";
 import socket from "../utils/socket";
 import { nanoid } from "nanoid";
 import { useState, useEffect } from "react";
+import uselistAllSender from "../hooks/listAllSender";
 function Message() {
-  const [sender, setSender] = useState(new Map());
+
+  const {sender, refetch, updateSenderList} = uselistAllSender();
   const [newUser, SetNewUser] = useState("");
   const [message, setMessage] = useState([]);
   const [groupId, setGroupId] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [groupUsername, setGroupUsername] = useState("")
-  async function listAllSender() {
-    try {
-      const response = await api.get('/listGroup');
-      console.log("response = ", response);
-      if (response) {
-        const updatedData = await Promise.all(response.data.map(async (user) => {
-          if (user.name === null) {
-            const userName = await api.get('/findUsernameInPrivateGroup', { params: { group_id: user.id } });
-            console.log(user.updatedAt);
-            return { ...user, id: Number(user.id), name: userName.data[0].username, updatedAt: new Date(user.updatedAt) };
-          }
-          return { ...user, id: Number(user.id), updatedAt: new Date(user.updatedAt) };
-        }))
-        updatedData.sort((a, b) => b.updatedAt - a.updatedAt);
-        setSender((prevMap) => {
-          const map = new Map();
-          updatedData.forEach((element) => {
-            // console.log(element);
-            map.set(element.id, element);
-          });
-          return map;
-        });
-      }
-    }
-    catch (error) {
-      console.log("Message = ", error.response);
-    }
-  }
+
   // UserArray stores list of all sender converted from map
   const userArray = useRef([]);
 
@@ -81,23 +56,6 @@ function Message() {
           setGroupId(gId);
           setGroupUsername(uName);
           SetNewUser("");
-          setSender((prevMap) => {
-            const newMap = new Map();
-
-            const newEntry = {
-              id: gId,
-              name: uName,
-              updatedAt: new Date()
-            };
-
-            newMap.set(gId, newEntry);
-
-            prevMap.forEach((value, key) => {
-              if (key !== gId) newMap.set(key, value);
-            });
-
-            return newMap;
-          });
         }
       }
     }
@@ -132,29 +90,7 @@ function Message() {
       if (groupId === incomingGroupId) {
         setMessage((prevMessages) => [...prevMessages, data]);
       }
-      setSender((prevMap) => {
-        const newMap = new Map();
-        const existingData = prevMap.get(incomingGroupId);
-        console.log("ExistingData = ", existingData);
-
-        if (existingData) {
-          newMap.set(incomingGroupId, existingData);
-          prevMap.forEach((value, key) => {
-            if (key !== incomingGroupId)
-              newMap.set(key, value);
-          })
-          return newMap;
-        }
-        else {
-          /*
-          If you call listAllSender() (an async API call) directly inside setSender, you are performing a side effect inside a function that is only supposed to calculate data.
-          This can lead to bugs.
-          */
-          setTimeout(() => listAllSender(), 0);
-          return prevMap;
-        }
-
-      })
+      updateSenderList(incomingGroupId);
     };
     socket.on('chat message', handleMessage);
 
@@ -163,10 +99,6 @@ function Message() {
     };
   }, [socket, groupId]);
 
-
-  useEffect(() => {
-    listAllSender();
-  }, []);
 
 
   const joinedRooms = useRef(new Set());
