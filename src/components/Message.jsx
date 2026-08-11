@@ -5,14 +5,13 @@ import socket from "../utils/socket";
 import { nanoid } from "nanoid";
 import { useState, useEffect } from "react";
 import uselistAllSender from "../hooks/listAllSender";
+import useSearchAndHandleUser from "../hooks/useSearchAndHandleUser";
+
 function Message() {
 
-  const {sender, refetch, updateSenderList} = uselistAllSender();
-  const [newUser, SetNewUser] = useState("");
+  const { sender, refetch, updateSenderList } = uselistAllSender();
+  const { searchResults, newUser, groupId, groupUsername, fetchUser, handleSelect, setIdAndUser } = useSearchAndHandleUser();
   const [message, setMessage] = useState([]);
-  const [groupId, setGroupId] = useState(0);
-  const [searchResults, setSearchResults] = useState([]);
-  const [groupUsername, setGroupUsername] = useState("")
 
   // UserArray stores list of all sender converted from map
   const userArray = useRef([]);
@@ -20,49 +19,6 @@ function Message() {
   useEffect(() => {
     userArray.current = [...sender.values()];
   }, [sender])
-
-  async function searchUser() {
-    if (newUser == "") {
-      return;
-    }
-    try {
-      const response = await api.get('/listUser', { params: { name: newUser } });
-      if (response) {
-        if (response.data.length > 0) {
-          setSearchResults((arr) => [...arr, { id: nanoid(), name: "new User" }]);
-          let resultData = response.data;
-          // The resultData returns {id as userId, username}
-          // We convert it to unique id, add name field same as username
-          resultData = resultData.map((user) => { return { ...user, name: user.username, user_id: user.id, id: nanoid() } });
-          console.log(resultData);
-          setSearchResults((arr) => [...arr, ...resultData]);
-        }
-      }
-    }
-    catch (error) {
-      console.log(error);
-    }
-  }
-
-  async function handleSelect(user) {
-    try {
-      const response = await api.post('/addPrivateGroup', { id: user.user_id });
-      if (response.data) {
-        console.log(response);
-        const gId = Number(response.data[0].group_id);
-        const userName = await api.get('/findUsernameInPrivateGroup', { params: { group_id: gId } });
-        if (userName.data) {
-          const uName = userName.data[0].username;
-          setGroupId(gId);
-          setGroupUsername(uName);
-          SetNewUser("");
-        }
-      }
-    }
-    catch (error) {
-      console.log(error);
-    }
-  }
 
   async function getMessage() {
     try {
@@ -119,10 +75,7 @@ function Message() {
 
     }
   }, [sender])
-  function listMessage({ groupId, groupUsername }) {
-    setGroupId(groupId);
-    setGroupUsername(groupUsername);
-  }
+
   return (
     <div className="flex w-full h-[90vh] p-2">
       <div className="card m-1 bg-base-300 w-1/3 rounded-box overflow-hidden">
@@ -147,7 +100,7 @@ function Message() {
               />
               <div className="btn btn-ghost"
                 onClick={(e) => {
-                  searchUser();
+                  fetchUser();
                 }}
               >
                 <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -181,7 +134,7 @@ function Message() {
               [...sender.values()].map((value) => {
                 return (
                   <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={value.id}
-                    onClick={(e) => listMessage({ groupId: value.id, groupUsername: value.name })}
+                    onClick={(e) => setIdAndUser({ groupId: value.id, groupUsername: value.name })}
                   >
                     <div>{value.name}</div>
                   </li>
