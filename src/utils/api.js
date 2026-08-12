@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // In production, uses the live backend URL.
 // In development, falls back to '' so the Vite proxy handles '/api'.
-const BACKEND_URL = import.meta.env.BACKEND_URL || '';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 const api = axios.create({
     baseURL: `${BACKEND_URL}/api`,
