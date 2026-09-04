@@ -2,15 +2,14 @@ import React, { useRef } from "react";
 import MessageList from "./MessageList";
 import api from "../utils/api";
 import socket from "../utils/socket";
-import { nanoid } from "nanoid";
 import { useState, useEffect } from "react";
 import uselistAllSender from "../hooks/listAllSender";
 import useSearchAndHandleUser from "../hooks/useSearchAndHandleUser";
 
 function Message() {
 
-  const { sender, refetch, updateSenderList } = uselistAllSender();
-  const { searchResults, newUser, groupId, groupUsername, fetchUser, handleSelect, setIdAndUser } = useSearchAndHandleUser();
+  const { sender, updateSenderList } = uselistAllSender();
+  const { searchResults, setSearchResults, newUser, setNewUser, groupId, groupUsername, fetchUser, handleSelect, setIdAndUser } = useSearchAndHandleUser();
   const [message, setMessage] = useState([]);
 
   // UserArray stores list of all sender converted from map
@@ -20,61 +19,79 @@ function Message() {
     userArray.current = [...sender.values()];
   }, [sender])
 
-  async function getMessage() {
-    try {
-      if (groupId !== "") {
+  useEffect(() => {
+    let isCancelled = false;
+    async function fetchMessages() {
+      if (!groupId || groupId === 0) {
+        setMessage([]);
+        return;
+      }
+      try {
         const response = await api.get('/getMessage', { params: { group_id: groupId } });
-        // console.log(response);
-        if (response) {
-          setMessage(response.data);
+        if (response && !isCancelled) {
+          setMessage(response.data || []);
         }
+      } catch (error) {
+        console.log(error.response);
       }
     }
-    catch (error) {
-      console.log(error.response);
-    }
-  }
-  useEffect(() => {
-    getMessage();
-  }, [groupId])
+    fetchMessages();
+    return () => {
+      isCancelled = true;
+    };
+  }, [groupId]);
 
 
-  // useState variables remain as it is in useEffect even when we update it
+  // Listen for live socket messages
   useEffect(() => {
     const handleMessage = (data) => {
       const incomingGroupId = Number(data.group_id);
-      if (groupId === incomingGroupId) {
-        setMessage((prevMessages) => [...prevMessages, data]);
+      if (Number(groupId) === incomingGroupId) {
+        setMessage((prevMessages) => {
+          const alreadyExists = prevMessages.some(
+            (m) =>
+              (data.client_msg_id && m.client_msg_id === data.client_msg_id) ||
+              m._id === data._id
+          );
+          if (alreadyExists) return prevMessages;
+          return [...prevMessages, data];
+        });
       }
       updateSenderList(incomingGroupId);
     };
+
     socket.on('chat message', handleMessage);
 
     return () => {
       socket.off('chat message', handleMessage);
     };
-  }, [socket, groupId]);
+  }, [groupId, updateSenderList]);
 
-
-
-  const joinedRooms = useRef(new Set());
-
+  // Ensure rooms are joined on sender/groupId change AND on every socket reconnect
   useEffect(() => {
-    if (sender.size > 0) {
-
-      if (!socket.connected) {
-        socket.connect();
+    function joinAllRooms() {
+      if (sender.size > 0) {
+        sender.forEach((value, key) => {
+          socket.emit('join room', String(key));
+        });
       }
-      sender.forEach((value, key) => {
-        if (!joinedRooms.current.has(key)) {
-          console.log('Joining room: ', key);
-          socket.emit('join room', key);
-          joinedRooms.current.add(key);
-        }
-      });
-
+      if (groupId && groupId !== 0) {
+        socket.emit('join room', String(groupId));
+      }
     }
-  }, [sender])
+
+    if (!socket.connected) {
+      socket.connect();
+    } else {
+      joinAllRooms();
+    }
+
+    socket.on('connect', joinAllRooms);
+
+    return () => {
+      socket.off('connect', joinAllRooms);
+    };
+  }, [sender, groupId]);
 
   return (
     <div className="flex w-full h-[90vh] p-2">
@@ -87,7 +104,7 @@ function Message() {
                 value={newUser}
                 onChange={(e) => {
                   const inputValue = e.target.value;
-                  SetNewUser(inputValue);
+                  setNewUser(inputValue);
                   if (inputValue.length > 0) {
                     const localSearch = userArray.current.filter(item => item.name.toLowerCase().startsWith(inputValue));
                     console.log("LocalSearch = ", localSearch);
@@ -99,7 +116,7 @@ function Message() {
                 }}
               />
               <div className="btn btn-ghost"
-                onClick={(e) => {
+                onClick={() => {
                   fetchUser();
                 }}
               >
@@ -134,7 +151,7 @@ function Message() {
               [...sender.values()].map((value) => {
                 return (
                   <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={value.id}
-                    onClick={(e) => setIdAndUser({ groupId: value.id, groupUsername: value.name })}
+                    onClick={() => setIdAndUser({ groupId: value.id, groupUsername: value.name })}
                   >
                     <div>{value.name}</div>
                   </li>
