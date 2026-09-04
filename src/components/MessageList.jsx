@@ -1,131 +1,199 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import api from "../utils/api";
-import socket from "../utils/socket";
-function MessageList({userName, message, groupId}) {
-  const [text, setText] = useState("");
-  let userData = useSelector((state) => state.userData);
+import { nanoid } from "nanoid";
+import { getOutboxForGroup, enqueueOutbox } from "../utils/outbox";
+import useOutboxProcessor from "../hooks/useOutboxProcessor";
 
-  // Scroll to bottom feature for message
+function MessageList({ userName, message = [], groupId }) {
+  const [text, setText] = useState("");
+  const [optimisticMessages, setOptimisticMessages] = useState([]);
+  const userData = useSelector((state) => state.userData);
   const scrollRef = useRef(null);
+
+  // Status update callback from useOutboxProcessor
+  const handleMessageStatusChange = useCallback((tempId, updatedData) => {
+    setOptimisticMessages((prevList) =>
+      prevList.map((msg) => {
+        if (msg.tempId === tempId || msg._id === tempId) {
+          return {
+            ...msg,
+            ...updatedData,
+            _id: updatedData._id || msg._id || tempId,
+          };
+        }
+        return msg;
+      })
+    );
+  }, []);
+
+  const { processOutbox, retryMessage } = useOutboxProcessor(handleMessageStatusChange);
+
+  // Derive all messages by combining server messages and pending outbox/optimistic messages
+  const displayMessages = useMemo(() => {
+    if (!groupId || groupId === 0) return [];
+
+    const serverMsgIds = new Set(
+      message.map((m) => m.client_msg_id || m.tempId || m._id)
+    );
+
+    const pendingOutbox = getOutboxForGroup(groupId);
+    const pendingMap = new Map();
+
+    pendingOutbox.forEach((item) => pendingMap.set(item.tempId || item._id, item));
+    optimisticMessages.forEach((item) => pendingMap.set(item.tempId || item._id, item));
+
+    const unconfirmedMessages = Array.from(pendingMap.values()).filter(
+      (item) => !serverMsgIds.has(item.tempId) && !serverMsgIds.has(item._id)
+    );
+
+    return [...message, ...unconfirmedMessages];
+  }, [message, groupId, optimisticMessages]);
+
+  // Scroll to bottom whenever messages list updates
   useEffect(() => {
-    console.log(scrollRef);
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [message]);
-  async function sendMessage() {
-    if (text == "") {
+  }, [displayMessages]);
+
+
+  function sendMessage() {
+    const trimmedText = text.trim();
+    if (!trimmedText || groupId === 0) {
       return;
     }
-    try { 
-      console.log("mesage sent");
-      const response = api.post('sendMessage', { group_id: Number(groupId), message_text: text });
-      if (response) {
-        setText("");
-      }
-    }
-    catch (error) {
-      console.log(error.response);
-    }
+
+    const tempId = `temp-${nanoid()}`;
+    const isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
+
+    const optimisticMsg = {
+      _id: tempId,
+      tempId,
+      group_id: Number(groupId),
+      sender_id: userData?.id,
+      sender_name: userData?.username || "You",
+      message_text: trimmedText,
+      status: isOnline ? "pending" : "failed",
+      createdAt: new Date().toISOString(),
+    };
+
+    // 1. Add optimistic message to localStorage outbox
+    enqueueOutbox(optimisticMsg);
+
+    // 2. Add immediately to React state
+    setOptimisticMessages((prev) => [...prev, optimisticMsg]);
+
+    // 3. Clear input
+    setText("");
+
+    // 4. Trigger outbox processing
+    processOutbox();
   }
-  if (groupId === 0) {
-    return <>Start our App by sending Message</>;
-  }
-  else {
+
+  if (groupId === 0 || !groupId) {
     return (
-      <div className="w-full h-full flex flex-col border-4 border-base-200 mb-2 rounded-md">
-        <div className="navbar bg-base-300 shadow-sm border-b-2 rounded-md justify-center font-bold">
-          {userName}
-        </div>
-        <div
-          ref={scrollRef}
-          className="flex-1 flex flex-col bg-base-100 gap-2 overflow-y-auto p-2"
-        >
-          {message.length > 0 && userData &&
-            message.map((mess) => {
-              return (
-                <div
-                  key={mess._id}
-                  className={`chat ${mess.sender_id == userData.id ? "chat-end" : "chat-start"} `}
-                >
-                  <div className="chat-bubble">
-                    {mess.message_text}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-        <div className="w-full flex justify-between gap-2 p-1">
-          <input type="text" placeholder="Type..." className="w-full input"
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-            }}
-          />
-          <button className="btn"
-            onClick={(e) => {
-              sendMessage();
-            }}
-          >Send</button>
-        </div>
-      </div>
-    )
-  }
-}
-
-export default MessageList;
-
-
-/*
-  if (userName == "") {
-    return <>Start our App by sending message</>;
-  } else {
-    return (
-      <div className="relative flex flex-col h-screen overflow-hidden">
-        <div className="flex-none w-full h-11 border-b-2 text-center p-2">
-          {userName}
-        </div>
-        <div
-          ref={scrollRef}
-          className="flex-1 flex flex-col gap-2 overflow-y-auto p-2"
-        >
-          {message.length > 0 &&
-            message.map((mess) => {
-              return (
-                <div
-                  key={mess["$id"]}
-                  id={mess["$id"]}
-                  className={`chat ${mess["SenderID"] == userId ? "chat-start" : "chat-end"} `}
-                >
-                  <div className="chat-bubble">
-                  {mess["Content"]}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-        <div className="flex items-center">
-          <div className="flex-1 border-2 m-2 h-10 rounded-lg">
-            <input
-              className="m-1 mt-1.5 outline-none"
-              placeholder="Type..."
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-              }}
-            />
-          </div>
-          <button
-            className="border-2 h-10 m-1 ml-0 rounded-lg p-1"
-            onClick={(e) => {
-              sendMessage();
-            }}
-          >
-            Send
-          </button>
-        </div>
+      <div className="w-full h-full flex justify-center items-center text-base-content/60 font-medium">
+        Select a conversation or start typing to send a message
       </div>
     );
   }
-*/
+
+  return (
+    <div className="w-full h-full flex flex-col border-4 border-base-200 mb-2 rounded-md">
+      <div className="navbar bg-base-300 shadow-sm border-b-2 rounded-md justify-center font-bold">
+        {userName}
+      </div>
+
+      <div
+        ref={scrollRef}
+        className="flex-1 flex flex-col bg-base-100 gap-2 overflow-y-auto p-2"
+      >
+        {displayMessages.length > 0 && userData &&
+          displayMessages.map((mess) => {
+            const isMe = mess.sender_id == userData.id;
+            const isPending =
+              mess.status === "pending" || mess.status === "sending";
+            const isFailed = mess.status === "failed";
+
+            return (
+              <div
+                key={mess.tempId || mess._id || nanoid()}
+                className={`chat ${isMe ? "chat-end" : "chat-start"}`}
+              >
+                <div className="chat-header text-xs opacity-50 mb-1">
+                  {mess.sender_name || (isMe ? "You" : userName)}
+                </div>
+
+                <div
+                  className={`chat-bubble ${
+                    isFailed
+                      ? "chat-bubble-error"
+                      : isMe
+                      ? "chat-bubble-primary"
+                      : ""
+                  }`}
+                >
+                  {mess.message_text}
+                </div>
+
+                {isMe && (
+                  <div className="chat-footer opacity-70 text-xs flex items-center gap-1 mt-1">
+                    {isPending && (
+                      <span
+                        className="flex items-center gap-1 text-warning font-medium"
+                        title="Sending..."
+                      >
+                        <span>🕒</span>
+                        <span className="text-[10px]">Sending...</span>
+                      </span>
+                    )}
+                    {isFailed && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-error btn-outline flex items-center gap-1 text-[10px]"
+                        onClick={() => retryMessage(mess.tempId || mess._id)}
+                        title="Click to retry"
+                      >
+                        <span>⚠️ Failed (Click to retry)</span>
+                      </button>
+                    )}
+                    {!isPending && !isFailed && (
+                      <span
+                        className="text-success font-semibold text-[10px]"
+                        title="Sent"
+                      >
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+      </div>
+
+      <div className="w-full flex justify-between gap-2 p-2 bg-base-200">
+        <input
+          type="text"
+          placeholder="Type a message..."
+          className="w-full input input-bordered"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              sendMessage();
+            }
+          }}
+        />
+        <button
+          className="btn btn-primary"
+          onClick={() => sendMessage()}
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default MessageList;
