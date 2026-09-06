@@ -51,7 +51,7 @@ function uselistAllSender() {
                 If you call listAllSender() (an async API call) directly inside setSender, you are performing a side effect inside a function that is only supposed to calculate data.
                 This can lead to bugs.
                 */
-                setTimeout(() => refetch, 0);
+                setTimeout(() => fetchSender(), 0);
                 return prevMap;
             }
 

@@ -28,6 +28,11 @@ function MessageList({ userName, message = [], groupId }) {
 
   const { processOutbox, retryMessage } = useOutboxProcessor(handleMessageStatusChange);
 
+  // Clear optimisticMessage after group change.
+  useEffect(() => {
+    setOptimisticMessages([]);
+  }, [groupId]);
+
   // Derive all messages by combining server messages and pending outbox/optimistic messages
   const displayMessages = useMemo(() => {
     if (!groupId || groupId === 0) return [];

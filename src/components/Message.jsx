@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { useSelector } from "react-redux";
 import MessageList from "./MessageList";
 import api from "../utils/api";
 import socket from "../utils/socket";
@@ -11,6 +12,8 @@ function Message() {
   const { sender, updateSenderList } = uselistAllSender();
   const { searchResults, setSearchResults, newUser, setNewUser, groupId, groupUsername, fetchUser, handleSelect, setIdAndUser } = useSearchAndHandleUser();
   const [message, setMessage] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const userData = useSelector((state) => state.userData);
 
   // UserArray stores list of all sender converted from map
   const userArray = useRef([]);
@@ -41,6 +44,17 @@ function Message() {
     };
   }, [groupId]);
 
+  // Clear unread count when chat is selected
+  useEffect(() => {
+    if (groupId && groupId !== 0) {
+      setUnreadCounts((prev) => {
+        if (!prev[groupId]) return prev;
+        const updated = { ...prev };
+        delete updated[groupId];
+        return updated;
+      });
+    }
+  }, [groupId]);
 
   // Listen for live socket messages
   useEffect(() => {
@@ -56,6 +70,13 @@ function Message() {
           if (alreadyExists) return prevMessages;
           return [...prevMessages, data];
         });
+      } else {
+        if (!userData?.id || data.sender_id !== userData.id) {
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [incomingGroupId]: (prev[incomingGroupId] || 0) + 1,
+          }));
+        }
       }
       updateSenderList(incomingGroupId);
     };
@@ -65,7 +86,7 @@ function Message() {
     return () => {
       socket.off('chat message', handleMessage);
     };
-  }, [groupId, updateSenderList]);
+  }, [groupId, userData, updateSenderList]);
 
   // Ensure rooms are joined on sender/groupId change AND on every socket reconnect
   useEffect(() => {
@@ -149,13 +170,23 @@ function Message() {
           <ul className="list rounded-box">
             {sender.size > 0 &&
               [...sender.values()].map((value) => {
+                const isSelected = Number(groupId) === Number(value.id);
+                const unread = unreadCounts[value.id] || 0;
                 return (
-                  <li className="list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200" key={value.id}
+                  <li
+                    className={`list-row hover:bg-base-100 m-1 hover:cursor-pointer active:bg-base-200 flex justify-between items-center ${isSelected ? "bg-base-200 font-semibold" : ""
+                      }`}
+                    key={value.id}
                     onClick={() => setIdAndUser({ groupId: value.id, groupUsername: value.name })}
                   >
-                    <div>{value.name}</div>
+                    <div className="truncate">{value.name}</div>
+                    {unread > 0 && (
+                      <span className="badge badge-primary badge-sm font-bold">
+                        {unread}
+                      </span>
+                    )}
                   </li>
-                )
+                );
               })
             }
           </ul>
