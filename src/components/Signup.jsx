@@ -2,18 +2,21 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { GoogleLogin } from "@react-oauth/google";
 import { login } from "../store/authSlice";
 import api from "../utils/api";
+
 function Signup() {
+  const dispatch = useDispatch();
   const { register, handleSubmit, formState } = useForm();
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
   async function onSubmit(data) {
     console.log(data);
     try {
       const response = await api.post('/user/signup', data);
-      // console.log(response);
-      if(response) {
+      if (response) {
         alert("User successfully created, You will be redirect to login");
         navigate('/login');
       }
@@ -23,6 +26,24 @@ function Signup() {
       setError(error.response?.data.message);
     }
   }
+
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      const response = await api.post('/user/google-auth', {
+        credential: credentialResponse.credential,
+      });
+      dispatch(login({ userData: response.data[0] }));
+      setError("");
+    } catch (error) {
+      console.log("Google Auth Error = ", error.response);
+      setError(error.response?.data?.message || "Google sign-up failed");
+    }
+  }
+
+  function handleGoogleFailure() {
+    setError("Google sign-in was unsuccessful. Please try again.");
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
@@ -86,9 +107,9 @@ function Signup() {
           id="email"
           {...register("email", { required: "email is required" })}
         />
-        {formState.errors.username && (
+        {formState.errors.email && (
           <p className="text-red-500 text-sm">
-            {formState.errors.username.message}
+            {formState.errors.email.message}
           </p>
         )}
 
@@ -122,7 +143,17 @@ function Signup() {
             "Signup"
           )}
         </button>
-        {error !== "" && <p className="text-red-500 text-sm">
+
+        <div className="divider my-2">OR</div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleFailure}
+          />
+        </div>
+
+        {error !== "" && <p className="text-red-500 text-sm mt-2">
           {error}
         </p>}
       </fieldset>
@@ -130,31 +161,3 @@ function Signup() {
   );
 }
 export default Signup;
-
-/*
-
-        <div className="p-8 border rounded-lg shadow-md">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2 rounded-lg p-2 justify-around items-center">
-                <h2 className="w-full text-center text-xl">Signup</h2>
-                <div className="flex flex-col gap-2">
-                    <div>
-                        <label htmlFor="username">Username</label>
-                        <input className="m-3 p-1 border-2 rounded-md" id="username" {...register('username', { required: "username is required" })} />
-                        {formState.errors.username && <p className="text-red-500 text-sm">{formState.errors.username.message}</p>}
-                    </div>
-                    <div>
-                        <label htmlFor="email" className="mr-8">Email</label>
-                        <input className="m-3 p-1 border-2 rounded-md" id="email" {...register('email', { required: "Email is required" })} />
-                        {formState.errors.username && <p className="text-red-500 text-sm">{formState.errors.username.message}</p>}
-                    </div>
-                    <div>
-                        <label className="mr-1" htmlFor="password">Password</label>
-                        <input type="password" className="m-3 p-1 border-2 rounded-md" id="password" {...register('password', { required: "Password is required" })} />
-                        {formState.errors.password && <p className="text-red-500 text-sm">{formState.errors.password.message}</p>}
-                    </div>
-                </div>
-                <button className="border w-1/3 rounded-lg">Submit</button>
-                <div>Already have account: <NavLink to="/login">Login Here</NavLink></div>
-            </form>
-        </div>
-*/

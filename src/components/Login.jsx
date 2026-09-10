@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import axios from 'axios';
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
+import { GoogleLogin } from "@react-oauth/google";
 import { login } from "../store/authSlice";
 import api from "../utils/api";
 import { useNavigate } from "react-router-dom";
-
 
 function Login() {
   const dispatch = useDispatch();
@@ -25,6 +24,24 @@ function Login() {
       setError(error.response?.data.message);
     }
   }
+
+  async function handleGoogleSuccess(credentialResponse) {
+    try {
+      const response = await api.post('/user/google-auth', {
+        credential: credentialResponse.credential,
+      });
+      dispatch(login({ userData: response.data[0] }));
+      setError("");
+    } catch (error) {
+      console.log("Google Auth Error = ", error.response);
+      setError(error.response?.data?.message || "Google authentication failed");
+    }
+  }
+
+  function handleGoogleFailure() {
+    setError("Google sign-in was unsuccessful. Please try again.");
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <fieldset className="fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
@@ -85,7 +102,17 @@ function Login() {
             "Login"
           )}
         </button>
-        {error !== "" && <p className="text-red-500 text-sm">
+
+        <div className="divider my-2">OR</div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleFailure}
+          />
+        </div>
+
+        {error !== "" && <p className="text-red-500 text-sm mt-2">
           {error}
         </p>}
       </fieldset>
